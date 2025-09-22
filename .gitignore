@@ -1,0 +1,11 @@
+# IntelliJ IDEA files
+.idea/
+*.iml
+
+# Build output
+build/
+out/
+
+# Other common files to ignore
+.gradle/
+*.class
