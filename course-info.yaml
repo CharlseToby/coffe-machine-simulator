@@ -11,15 +11,15 @@ summary: "<div>\r\n<p>What can be better than a cup of coffee during a break? A 
   \ it also collects the money.<br>\r\nThis project allows you to better understand\
   \ the basic OOP, its main concepts such as classes, class methods and attributes,\
   \ and get a taste of Java. Practice working with methods, challenge yourself with\
-  \ loops and conditions, and get more confident with OOP.</p>\r\n</div><br/><br/>Learn\
-  \ more at <a href=\"https://hyperskill.org/projects/33?utm_source=ide&utm_medium=ide&utm_campaign=ide&utm_content=project-card\"\
-  >https://hyperskill.org/projects/33</a>"
+  \ loops and conditions, and get more confident with OOP.</p>\r\n</div>"
 programming_language: Java
 programming_language_version: 11
 content:
   - Coffee Machine Simulator with Java
 additional_files:
   - name: build.gradle
+    visible: true
   - name: settings.gradle
+    visible: true
 mode: Study
 yaml_version: 5
