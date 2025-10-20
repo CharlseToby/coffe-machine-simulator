@@ -1,30 +1,37 @@
 package machine;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CoffeeMachine {
     public static void main(String[] args) {
-        displayState();
-         String action = getAction();
+        boolean keepRunning = true;
+        while (keepRunning){
+            String action = getAction();
 
-         switch (action){
-             case "fill":
-                 handleFillAction();
-                 break;
-             case "buy":
-                 handleBuyAction();
-                 break;
-             case "take":
-                 handleTakeAction();
-                 break;
-             default:
-                 break;
-         }
-
-         displayState();
-//        int[] inventory = getInventory();
-//        int cupsPossible = getCupsPossible(inventory);
-//        System.out.println(getDecision(cupsPossible, inventory[3]));
+            switch (action){
+                case "fill":
+                    handleFillAction();
+                    break;
+                case "buy":
+                    handleBuyAction();
+                    break;
+                case "take":
+                    handleTakeAction();
+                    break;
+                case "remaining":
+                    displayState();
+                    break;
+                case "exit":
+                    keepRunning = false;
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     //create a scanner to reuse
@@ -42,12 +49,22 @@ public class CoffeeMachine {
 
     //create enum for coffee types
     public enum CoffeeType {
-        ESPRESSO(1, "espresso"), LATTE(2, "latte"), CAPPUCCINO(3, "cappuccino");
+        ESPRESSO(1, "espresso", 250, 0, 16, 4),
+        LATTE(2, "latte", 350, 75, 20, 7),
+        CAPPUCCINO(3, "cappuccino", 200, 100, 12, 6);
         final int code;
         final String name;
-        CoffeeType(int code, String name){
+        final int water;
+        final int milk;
+        final int coffee;
+        final int price;
+        CoffeeType(int code, String name, int water, int milk, int coffee, int price){
             this.code = code;
             this.name = name;
+            this.water = water;
+            this.milk = milk;
+            this.coffee = coffee;
+            this.price = price;
         }
 
         String getName(){
@@ -55,6 +72,24 @@ public class CoffeeMachine {
         }
         int getCode(){
             return code;
+        }
+        int getWater(){
+            return water;
+        }
+        int getMilk(){
+            return milk;
+        }
+        int getCoffee(){
+            return coffee;
+        }
+        int getPrice(){
+            return price;
+        }
+
+        private static final Map<Integer, CoffeeType> coffeeTypeMap = Stream.of(values()).collect(Collectors.toMap(CoffeeType::getCode, e -> e));
+
+        public static CoffeeType getCoffeeType(int code){
+            return coffeeTypeMap.get(code);
         }
 
         public static String getNameFromCode(int code){
@@ -72,7 +107,7 @@ public class CoffeeMachine {
     //create a function to get action/order (buy, fill, take)
     public static String getAction(){
 //        Scanner sc = new Scanner(System.in);
-        System.out.println("Write action (buy, fill, take): ");
+        System.out.println("Write action (buy, fill, take, remaining, exit): ");
         return myScanner.nextLine();
     }
 
@@ -95,25 +130,26 @@ public class CoffeeMachine {
 
     //create a function to handle buy
     public static void handleBuyAction(){
-        System.out.println("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino: ");
-        int buyCode = myScanner.nextInt();
-        if("espresso".equals(CoffeeType.getNameFromCode(buyCode))){
-            waterMl -= 250;
-            coffeeGram -= 16;
-            disposableCups -= 1;
-            balance += 4;
-        } else if("latte".equals(CoffeeType.getNameFromCode(buyCode))){
-            waterMl -= 350;
-            milkMl -= 75;
-            coffeeGram -= 20;
-            disposableCups -= 1;
-            balance += 7;
-        } else if("cappuccino".equals(CoffeeType.getNameFromCode(buyCode))){
-            waterMl -= 200;
-            milkMl -= 100;
-            coffeeGram -= 12;
-            disposableCups -= 1;
-            balance += 6;
+        System.out.println("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino, back - to main menu:");
+        String buyAction = myScanner.nextLine();
+        if(!"back".equals(buyAction)){
+            int buyCode = Integer.parseInt(buyAction);
+            if(buyCode != 1 && buyCode != 2 && buyCode != 3){
+                System.out.println("Invalid input. Please try again.");
+            } else {
+                CoffeeType coffeeType = CoffeeType.getCoffeeType(buyCode);
+                String[] inventoryResult = getDecision(getInventory(coffeeType, 1));
+                if(inventoryResult[0].equals("true")){
+                    System.out.println(inventoryResult[1]);
+                    waterMl = waterMl - coffeeType.getWater();
+                    coffeeGram = coffeeGram - coffeeType.getCoffee();
+                    milkMl = milkMl - coffeeType.getMilk();
+                    balance = balance + coffeeType.getPrice();
+                    disposableCups -= 1;
+                } else if(inventoryResult[0].equals("false")){
+                    System.out.println(inventoryResult[1]);
+                }
+            }
         }
     }
 
@@ -133,41 +169,56 @@ public class CoffeeMachine {
         System.out.println("$" + balance + " of money");
     }
 
-    // create a function to get inventory
-    public static int[] getInventory(){
-        System.out.println("write how many ml of water the coffee machine has: ");
-        Scanner sc = new Scanner(System.in);
-        int waterMl = sc.nextInt();
-        System.out.println("Write how many ml of milk the coffee machine has: ");
-        int milkMl = sc.nextInt();
-        System.out.println("Write how many grams of coffee beans the coffee machine has: ");
-        int coffeeGram = sc.nextInt();
-        System.out.println("Write how many cups of coffee you will need: ");
-        int cups = sc.nextInt();
+    // create a function to get inventory and calculate how many cups can be made from inventory given the coffeType
+    public static Map<String, Integer> getInventory(CoffeeType coffeeType, int cupsRequired){
+        //create a hashmap of items that needs refilling
+        Map<String, Integer> refillMap = new HashMap<>();
 
-        return new int[]{waterMl, milkMl, coffeeGram, cups};
-    }
+        //check the coffee type and confirm inventory capacity
+        int maxWater, maxMilk, maxCoffee;
+        if(coffeeType.getWater() != 0){
+            maxWater = waterMl / coffeeType.getWater();
+            if(maxWater < cupsRequired){
+                refillMap.put("water", maxWater);
+            }
+        }
+        if(coffeeType.getMilk() != 0){
+            maxMilk = milkMl / coffeeType.getMilk();
+            if(maxMilk < cupsRequired){
+                refillMap.put("milk", maxMilk);
+            }
+        }
+        if(coffeeType.getCoffee() != 0){
+            maxCoffee = coffeeGram / coffeeType.getCoffee();
+            if(maxCoffee < cupsRequired){
+                refillMap.put("coffee", maxCoffee);
+            }
+        }
+        if(disposableCups < cupsRequired){
+            refillMap.put("cups", disposableCups);
+        }
 
-    // create a function to calculate how many cups can be made from inventory
-    public static int getCupsPossible(int[] inventory){
-        if(inventory[0] == 0 || inventory[1] == 0 || inventory[2] == 0) return 0;
-        inventory[0] = inventory[0] / 200;
-        inventory[1] = inventory[1] / 50;
-        inventory[2] = inventory[2] / 15;
-
-        return Math.min(Math.min(inventory[0], inventory[1]), inventory[2]);
+        return refillMap;
     }
 
     // return decision as string
-    public static String getDecision(int numberOfCupsPossible, int numberOfCupsNeeded){
-        String decision;
-        if(numberOfCupsNeeded > numberOfCupsPossible){
-            decision = "No, I can make only " + numberOfCupsPossible + " cup(s) of coffee";
-        } else if(numberOfCupsNeeded == numberOfCupsPossible){
-            decision = "Yes, I can make that amount of coffee";
+    public static String[] getDecision(Map<String, Integer> refillMap){
+        StringBuilder decision = new StringBuilder();
+        String isEnough;
+        if(refillMap.isEmpty()){
+            isEnough = "true";
+            decision.append("I have enough resources, making you a coffee!");
         } else {
-            decision = "Yes, I can make that amount of coffee (and even " + (numberOfCupsPossible - numberOfCupsNeeded) + " more than that)";
+            isEnough = "false";
+            refillMap.forEach((key, value) -> {
+                if(decision.isEmpty()){
+                    decision.append("Sorry, not enough ").append(key);
+                } else {
+                    decision.append(" and ").append(key);
+                }
+            });
+            decision.append("!");
         }
-        return decision;
+        return new String[]{isEnough, decision.toString()};
     }
 }
