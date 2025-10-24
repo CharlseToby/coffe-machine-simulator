@@ -28,6 +28,9 @@ public class CoffeeMachine {
                 case "exit":
                     keepRunning = false;
                     break;
+                case "clean":
+                    handleCleanMachine();
+                    break;
                 default:
                     break;
             }
@@ -43,6 +46,7 @@ public class CoffeeMachine {
     public static int milkMl = 540;
     public static int coffeeGram = 120;
     public static int disposableCups = 9;
+    public static int servedCups = 0;
 
     //create enum for actions possible
     public enum actions {FILL, BUY, TAKE}
@@ -107,7 +111,7 @@ public class CoffeeMachine {
     //create a function to get action/order (buy, fill, take)
     public static String getAction(){
 //        Scanner sc = new Scanner(System.in);
-        System.out.println("Write action (buy, fill, take, remaining, exit): ");
+        System.out.println("Write action (buy, fill, take, clean, remaining, exit): ");
         return myScanner.nextLine();
     }
 
@@ -128,8 +132,17 @@ public class CoffeeMachine {
         disposableCups = disposableCups + moreDisposableCups;
     }
 
+    public static void handleCleanMachine(){
+        servedCups = 0;
+        System.out.println("I have been cleaned!");
+    }
+
     //create a function to handle buy
     public static void handleBuyAction(){
+        if(servedCups >= 10){
+            System.out.println("I need cleaning!");
+            return;
+        }
         System.out.println("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino, back - to main menu:");
         String buyAction = myScanner.nextLine();
         if(!"back".equals(buyAction)){
@@ -146,6 +159,7 @@ public class CoffeeMachine {
                     milkMl = milkMl - coffeeType.getMilk();
                     balance = balance + coffeeType.getPrice();
                     disposableCups -= 1;
+                    servedCups++;
                 } else if(inventoryResult[0].equals("false")){
                     System.out.println(inventoryResult[1]);
                 }
